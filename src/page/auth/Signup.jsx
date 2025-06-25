@@ -1,42 +1,74 @@
-import React from 'react'
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { FaCheckCircle, FaEye, FaEyeSlash } from "react-icons/fa"
+import React from 'react';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FaCheckCircle, FaEye, FaEyeSlash } from "react-icons/fa";
+import { useSigupMutation } from '../../redux/service/authSlice';
 
 const Signup = () => {
-    const navigate = useNavigate()
+  const navigate = useNavigate();
+  const [signup, {isLoading, error: apiError}] = useSigupMutation();
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     firstName: "",
     lastName: "",
     password: "",
-  })
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+    confirmPassword: "",
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState(""); // Fixed typo: formErorr -> formError
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
-    }))
-  }
+    }));
+    setFormError(""); // Fixed typo: setFormError instead of setFormError
+  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    setIsLoading(true)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFormError(""); // Clear any previous errors
 
-    // Simulate signup process
-    setTimeout(() => {
-      console.log("Signup submitted:", formData)
-      setIsLoading(false)
-      // Navigate to verification page after successful signup
-      navigate("/verify-email", { state: { email: formData.email } })
-    }, 1500)
-  }
+    // Check if passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setFormError("Passwords do not match"); // Fixed: was calling setError instead of setFormError
+      return;
+    }
+
+    try {
+      const response = await signup({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        firstName: formData.firstName,
+        lastName: formData.lastName
+      }).unwrap();
+      
+      console.log("Signup successful:", response);
+      
+      // Navigate with the email in state
+      navigate("/verify-email", { state: { email: formData.email } }); // Fixed: wrapped email in object
+    } catch (error) {
+      console.log("Signup failed: ", error);
+      
+      // Set appropriate error message
+      if (error?.data?.message) {
+        setFormError(error.data.message);
+      } else if (error?.status === 409) {
+        setFormError("Username or email already exists");
+      } else if (error?.status === 400) {
+        setFormError("Please check your input and try again");
+      } else {
+        setFormError("Registration failed. Please try again.");
+      }
+    }
+  };
+
   return (
-    <div className=" flex h-screen w-screen flex-col items-center justify-center">
+    <div className="flex h-screen w-screen flex-col items-center justify-center">
       <Link to="/" className="absolute left-4 top-4 md:left-8 md:top-8 flex items-center gap-2 font-semibold">
         <FaCheckCircle className="h-6 w-6 text-blue-600" />
         <span>Taskly</span>
@@ -50,6 +82,15 @@ const Signup = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="p-6 space-y-4">
+            {/* Show API error if exists */}
+            {apiError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-800 text-sm">
+                  {apiError?.data?.message || "Registration failed. Please try again."}
+                </p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <label htmlFor="username" className="text-sm font-medium">
                 Username
@@ -137,7 +178,36 @@ const Signup = () => {
                   <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
                 </button>
               </div>
-              <p className="text-xs text-gray-500">Password must be at least 6 characters long</p>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="confirmPassword" className="text-sm font-medium">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className={`flex h-10 w-full rounded-md border ${formError ? "border-red-500" : "border-gray-200"} bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`}
+                />
+                <button
+                  type="button"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <FaEyeSlash className="h-4 w-4 text-gray-500" />
+                  ) : (
+                    <FaEye className="h-4 w-4 text-gray-500" />
+                  )}
+                  <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                </button>
+              </div>
+              {formError && <p className="text-red-500 text-sm">{formError}</p>}
             </div>
           </div>
 
@@ -159,7 +229,7 @@ const Signup = () => {
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Signup
+export default Signup;

@@ -1,44 +1,73 @@
-import React from 'react'
-import { Link } from "react-router-dom"
-import { FaCheckCircle, FaEye, FaEyeSlash } from "react-icons/fa"
-import { useState } from "react"
-import { useGetLoginMutation } from '../../redux/service/authSlice'
-
+import React, { useEffect } from "react";
+import { Link,useNavigate } from "react-router-dom";
+import { FaCheckCircle, FaEye, FaEyeSlash } from "react-icons/fa";
+import { useState } from "react";
+import {
+  useGetLoginMutation,
+  useGetVerifiedMutation,
+} from "../../redux/service/authSlice";
 
 const Login = () => {
-
-    const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState({
     email: "",
     password: "",
-  })
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  // const [isLoading, setIsLoading] = useState(false);
 
-  const [getLogin,{}] = useGetLoginMutation
+  const [getLogin, { isLoading, error }] = useGetLoginMutation();
+  const [getVerified, { isLoading: myLoading, error: myError }] =
+    useGetVerifiedMutation();
+
+  const [dataOfUser, setUserData] = useState();
+
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    setIsLoading(true)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const accessTokenData = await getLogin(formData).unwrap();
+      if (accessTokenData) {
+        localStorage.setItem("accessToken", accessTokenData.accessToken);
+        navigate("/Todo");
+      }
+    } catch (error) {
+      alert("Login fall");
+    }
 
     // Simulate login process
     setTimeout(() => {
-      console.log("Login submitted:", formData)
-      setIsLoading(false)
+      // console.log("Login submitted:", formData);
       // Add your authentication logic here
-    }, 1500)
-  }
+    }, 1500);
+  };
 
+  useEffect(() => {
+    const accessTokenFromLocalStorage = localStorage.getItem("accessToken");
+    async function Verified() {
+      const userData = await getVerified(accessTokenFromLocalStorage).unwrap();
+      console.log(userData);
+      setUserData(userData);
+    }
+    Verified();
+  }, []);
+
+  
   return (
-     <div className=" flex h-screen w-screen flex-col items-center justify-center">
-      <Link to="/" className="absolute left-4 top-4 md:left-8 md:top-8 flex items-center gap-2 font-semibold">
+    <div className=" flex h-screen w-screen flex-col items-center justify-center">
+      <Link
+        to="/"
+        className="absolute left-4 top-4 md:left-8 md:top-8 flex items-center gap-2 font-semibold"
+      >
         <FaCheckCircle className="h-6 w-6 text-blue-600" />
         <span>Taskly</span>
       </Link>
@@ -46,7 +75,9 @@ const Login = () => {
       <div className="w-full max-w-md border rounded-lg shadow-sm bg-white">
         <div className="p-6 space-y-1">
           <h2 className="text-2xl font-bold">Login</h2>
-          <p className="text-gray-500 text-sm">Enter your email and password to access your account</p>
+          <p className="text-gray-500 text-sm">
+            Enter your email and password to access your account
+          </p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -72,7 +103,10 @@ const Login = () => {
                 <label htmlFor="password" className="text-sm font-medium">
                   Password
                 </label>
-                <Link to="/forgot-password" className="text-xs text-blue-600 hover:underline">
+                <Link
+                  to="/404"
+                  className="text-xs text-blue-600 hover:underline"
+                >
                   Forgot password?
                 </Link>
               </div>
@@ -96,7 +130,9 @@ const Login = () => {
                   ) : (
                     <FaEye className="h-4 w-4 text-gray-500" />
                   )}
-                  <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                  <span className="sr-only">
+                    {showPassword ? "Hide password" : "Show password"}
+                  </span>
                 </button>
               </div>
             </div>
@@ -120,7 +156,7 @@ const Login = () => {
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;

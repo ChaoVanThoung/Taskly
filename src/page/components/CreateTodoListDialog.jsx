@@ -5,6 +5,7 @@ export default function CreateTodoListDialog({
   open,
   onOpenChange,
   onCreateList,
+  isLoading
 }) {
   const [formData, setFormData] = useState({
     name: "",

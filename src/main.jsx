@@ -6,23 +6,24 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Login from "./page/auth/Login.jsx";
 import Signup from "./page/auth/Signup.jsx";
 import VerifyEmail from "./page/auth/VerifyEmail.jsx";
-import Todo from "./page/todo.jsx";
+import Todo from "./page/Todo.jsx";
 import { Provider } from "react-redux";
 import { store } from "./redux/store.js";
+import PageNotFound from "./page/PageNotFound.jsx";
 
 createRoot(document.getElementById("root")).render(
-  <Provider store={store}>
+<Provider store={store} >
     <BrowserRouter>
       <StrictMode>
         <Routes>
           <Route path="login" element={<Login />} />
           <Route path="signup" element={<Signup />} />
           <Route path="/" element={<App />} />
-
+          <Route path="404" element={<PageNotFound/>}/>
           <Route path="verify-email" element={<VerifyEmail />} />
           <Route path="todo" element={<Todo />} />
         </Routes>
       </StrictMode>
     </BrowserRouter>
-  </Provider>
+</Provider>
 );
