@@ -1,11 +1,12 @@
 import React, { useEffect } from "react";
-import { Link,useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FaCheckCircle, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useState } from "react";
 import {
   useGetLoginMutation,
   useGetVerifiedMutation,
 } from "../../redux/service/authSlice";
+
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -38,17 +39,14 @@ const Login = () => {
       const accessTokenData = await getLogin(formData).unwrap();
       if (accessTokenData) {
         localStorage.setItem("accessToken", accessTokenData.accessToken);
-        navigate("/Todo");
+
+        setTimeout(() => {
+          navigate("/Todo");
+        }, 1000);
       }
     } catch (error) {
-      alert("Login fall");
+     alert("Login fail")
     }
-
-    // Simulate login process
-    setTimeout(() => {
-      // console.log("Login submitted:", formData);
-      // Add your authentication logic here
-    }, 1500);
   };
 
   useEffect(() => {
@@ -61,9 +59,9 @@ const Login = () => {
     Verified();
   }, []);
 
-  
   return (
     <div className=" flex h-screen w-screen flex-col items-center justify-center">
+    
       <Link
         to="/"
         className="absolute left-4 top-4 md:left-8 md:top-8 flex items-center gap-2 font-semibold"

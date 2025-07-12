@@ -1,17 +1,19 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate, Navigate, useLocation } from "react-router-dom";
-import { FaPlus, FaSearch, FaUser, FaCog, FaSignOutAlt  } from "react-icons/fa";
+import { FaPlus, FaSearch, FaUser, FaCog, FaSignOutAlt } from "react-icons/fa";
 
 import CreateTodoIteamDailog from "./components/CreateTodoIteamDailog";
 import CreateTodoListDialog from "./components/CreateTodoListDialog";
 import TodoListCartComponent from "./components/TodoListCartComponent";
 import TodoItemCartComponent from "./components/TodoItemCartComponent";
 import UserProfileDialogComponent from "./components/UserProfileDialogComponent";
+import DeleteConfirmationDialog from "./components/DeleteConfirmationDialog";
 import { useGetVerifiedMutation } from "../redux/service/authSlice";
 import {
   useGetTodoListsQuery,
   useCreateTodoListMutation,
+  useDeleteTodoListMutation,
 } from "../redux/service/todoListSlice";
 import {
   useCompleteTodoItemMutation,
@@ -28,9 +30,11 @@ const Todo = ({ onLogout }) => {
   const [showProfile, setShowProfile] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [user, setUser] = useState(null);
+  const [listToDelete, setListToDelete] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const navigate = useNavigate();
-  const location =- useLocation();
+  const location = -useLocation();
 
   const [getVerified, { isLoading: myLoading, error: myError }] =
     useGetVerifiedMutation();
@@ -54,9 +58,8 @@ const Todo = ({ onLogout }) => {
     useCompleteTodoItemMutation();
   const [uncompleteTodoItem, { isLoading: isUncompletingItem }] =
     useUncompleteTodoItemMutation();
-
-
-    
+  const [deleteTodoList, { isLoading: isDeletingList }] =
+    useDeleteTodoListMutation();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -73,8 +76,6 @@ const Todo = ({ onLogout }) => {
     };
     fetchUserData();
   }, [getVerified]);
-
-
 
   useEffect(() => {
     if (user?.uuid) {
@@ -134,7 +135,7 @@ const Todo = ({ onLogout }) => {
       await crateTodoList(todoListRequest).unwrap();
       setShowCreateList(false);
       await refetchTodoLists();
-      alert("Todo list created successfully!");
+      <Alert severity="success">This is a success Alert.</Alert>;
       refetchTodoLists();
     } catch (error) {
       console.error("Failed to create todo list:", error);
@@ -158,6 +159,29 @@ const Todo = ({ onLogout }) => {
     }
   };
 
+  const handleDeleteList = (todoList) => {
+    setListToDelete(todoList);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteList = async () => {
+    if (!listToDelete) return;
+
+    try {
+      await deleteTodoList(listToDelete.id).unwrap();
+      if (setListToDelete === listToDelete.id) {
+        selectedList(null);
+      }
+      setShowDeleteDialog(false);
+      setListToDelete(null);
+      toast.success("Todo list deleted Successfully");
+      refetchTodoLists();
+    } catch (error) {
+      console.error("Failed to delete todo list:", error);
+      toast.error("Failed to delete todo list. Please try again.");
+    }
+  };
+
   const accessToken = localStorage.getItem("accessToken");
   if (!accessToken) return <Navigate to="/" />;
 
@@ -177,7 +201,6 @@ const Todo = ({ onLogout }) => {
       </div>
     );
   }
-
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -284,6 +307,7 @@ const Todo = ({ onLogout }) => {
                   onClick={() =>
                     setSelectedList(selectedList === list.id ? null : list.id)
                   }
+                  onDelete={handleDeleteList}
                 />
               ))}
             </div>
@@ -382,6 +406,15 @@ const Todo = ({ onLogout }) => {
         onOpenChange={setShowProfile}
         user={user}
         accessToken={accessToken}
+      />
+
+      <DeleteConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDeleteList}
+        isLoading={isDeletingList}
+        title="Delete Todo List"
+        message={`Are you sure you want to delete "${listToDelete?.name}"? This will also delete all todo items in this list. This action cannot be undone.`}
       />
     </div>
   );

@@ -26,7 +26,14 @@ export const todoListApi = createApi({
       }),
       invalidatesTags: ["TodoList"],
     }),
+    deleteTodoList: builder.mutation({
+      query: (id) => ({
+        url: `/todo-lists/delete/${id}`,
+        method: "DELETE"
+      }),
+      invalidatesTags: ["TodoList"]
+    })
   }),
 });
 
-export const { useGetTodoListsQuery, useCreateTodoListMutation } = todoListApi;
+export const { useGetTodoListsQuery, useCreateTodoListMutation, useDeleteTodoListMutation } = todoListApi;
